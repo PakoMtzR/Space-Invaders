@@ -15,6 +15,9 @@ SHIP_SIZE = 50
 # Creamos reloj
 clock = pygame.time.Clock()
 
+# Cargamos sonidos del juego
+war_sound = pygame.mixer.Sound("sounds/war_sound.mp3")
+
 # Creamos y configuramos la pantalla del juego
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(TITLE)
@@ -59,6 +62,7 @@ class Player(Ship):
         self.mask = pygame.mask.from_surface(self.img)
         self.laser_color = (255, 0, 0)
         self.lives = 5
+        self.destroyed_enemies = 0
     
     def move_lasers(self, objs):
         for laser in self.lasers:
@@ -68,7 +72,9 @@ class Player(Ship):
             else:
                 for obj in objs:
                     if laser.collision(obj):
+                        self.destroyed_enemies += 1
                         objs.remove(obj)
+
                         if laser in self.lasers:
                             self.lasers.remove(laser)
 
@@ -133,9 +139,11 @@ def redraw_window():
     label_level = font.render(f"Level: {level}", True, (255,255,255))
     label_lives = font.render(f"Lives: {player.lives}", True, (255,255,255))
     label_health = font.render(f"Health: {player.health}", True, (255,255,255))
+    label_destroyed = font.render(f"Destroyed: {player.destroyed_enemies}", True, (255,255,255))
     screen.blit(label_level, (10,10))
     screen.blit(label_lives, (10,30))
     screen.blit(label_health, (10,50))
+    screen.blit(label_destroyed, (10,70))
 
     # Si el jugador pierde mostramos el mensaje de derrota
     if lost:
@@ -155,6 +163,7 @@ def redraw_window():
 
         if collide(enemy, player):
             player.health -= 10
+            player.destroyed_enemies += 1
             enemies.remove(enemy)
         elif enemy.y > HEIGHT:
             player.lives -= 1
@@ -183,6 +192,7 @@ while is_running:
     if not enemies:
         level += 1
         wave_length += 5
+        war_sound.play()
         for i in range(wave_length):
             enemy = Enemy(randrange(0, WIDTH-SHIP_SIZE), randrange(-1500, -100))
             enemies.append(enemy)
