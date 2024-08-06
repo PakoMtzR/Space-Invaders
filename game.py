@@ -1,5 +1,5 @@
 import pygame
-from random import randrange
+from random import randrange, randint
 
 # Inicializamos pygame
 pygame.init()
@@ -29,6 +29,29 @@ font = pygame.font.SysFont("Consolas", 20)
 title_font = pygame.font.SysFont("Consolas", 30)
 label_title = title_font.render("Press any key to begin", True, (255,255,255))
 label_lost = title_font.render("You Lost!", True, (255,255,255))
+
+class Stars():
+    def __init__(self):
+        self.color = (101, 101, 101)
+        self.num_stars = 100
+        self.radio = 2
+        self.speed = 0.4
+        self.window_width = WIDTH
+        self.window_height = HEIGHT
+
+        # Generando mapa de estrellas
+        self.stars_list = []
+        for star in range(self.num_stars):
+            pos_x = randint(0, self.window_width)
+            pos_y = randint(0, self.window_height)
+            self.stars_list.append([pos_x, pos_y])
+
+    def draw(self, screen):
+        for star in self.stars_list:
+            pygame.draw.circle(screen, self.color, star, self.radio)
+            star[1] += self.speed   # Modificamos posicion en y
+            if star[1] > self.window_height:
+                star[1] = 0    
 
 class Ship:
     def __init__(self, pos_x, pos_y, health = 100):
@@ -146,6 +169,7 @@ def collide(obj1, obj2):
 # Juego
 def run_game():
     # Variables del juego
+    stars = Stars()
     level = 0
     player = Player(WIDTH//2, HEIGHT//2)
     enemies = []
@@ -155,19 +179,8 @@ def run_game():
 
     def redraw_window():
         screen.fill(BACKGROUND)     # Rellenamos el fondo    
-
-        # Escribimos los labels de nivel, vidas, etc.
-        label_level = font.render(f"Level: {level}", True, (255,255,255))
-        label_lives = font.render(f"Lives: {player.lives}", True, (255,255,255))
-        label_destroyed = font.render(f"Destroyed: {player.destroyed_enemies}", True, (255,255,255))
-        screen.blit(label_level, (10,10))
-        screen.blit(label_lives, (10,30))
-        screen.blit(label_destroyed, (10,50))
-
-        # Si el jugador pierde mostramos el mensaje de derrota
-        if lost:
-            screen.blit(label_lost, ((WIDTH//2)-(label_lost.get_width()//2), (HEIGHT//2)-(label_lost.get_height()//2)))
-
+        stars.draw(screen)
+        
         # Dibuja al jugador y sus lasers
         player.move_lasers(enemies)
         player.draw(screen)
@@ -188,6 +201,18 @@ def run_game():
                 enemies.remove(enemy)
                 if player.lives > 0:
                     player.lives -= 1
+
+        # Escribimos los labels de nivel, vidas, etc.
+        label_level = font.render(f"Level: {level}", True, (255,255,255))
+        label_lives = font.render(f"Lives: {player.lives}", True, (255,255,255))
+        label_destroyed = font.render(f"Destroyed: {player.destroyed_enemies}", True, (255,255,255))
+        screen.blit(label_level, (10,10))
+        screen.blit(label_lives, (10,30))
+        screen.blit(label_destroyed, (10,50))
+
+        # Si el jugador pierde mostramos el mensaje de derrota
+        if lost:
+            screen.blit(label_lost, ((WIDTH//2)-(label_lost.get_width()//2), (HEIGHT//2)-(label_lost.get_height()//2)))
 
         # Actualizamos la pantalla
         pygame.display.update()
