@@ -15,6 +15,13 @@ BACKGROUND = (15,15,15)
 FPS = 60
 SHIP_SIZE = 50
 
+keyboard_img = pygame.transform.scale(pygame.image.load("imgs/teclado.png"), (150,150))
+space_key_img = pygame.transform.scale(pygame.image.load("imgs/espacio.png"), (150,150))
+
+# Colors
+WHITE = (255,255,255)
+BLACK = (0,0,0)
+
 # Creamos reloj
 clock = pygame.time.Clock()
 
@@ -35,6 +42,15 @@ font_karma_60 = pygame.font.Font("fonts/KarmaFuture.ttf", 60)
 font_karma_20 = pygame.font.Font("fonts/KarmaFuture.ttf", 20)
 font_arcade_20 = pygame.font.Font("fonts/ArcadeClassic.ttf", 20)
 font_karmatic_20 = pygame.font.Font("fonts/KarmaticArcarde.ttf", 15)
+
+def draw_text(surface, text, font, color, x, y, center=True):
+    textobj = font.render(text, True, color)
+    textrect = textobj.get_rect()
+    if center:
+        textrect.center = (x, y)
+        surface.blit(textobj, textrect)
+    else:
+        surface.blit(textobj, (x,y))
 
 class Textbox():
     def __init__(self, pos_x, pos_y, width, height, font, text_color=(255,255,255), box_color=(50, 50, 50), active_color=(100, 100, 100)):
@@ -61,9 +77,11 @@ class Textbox():
         if event.type == pygame.KEYDOWN:
             if self.active:
                 if event.key == pygame.K_RETURN:
-                    print(self.text)  # Acción al presionar Enter
-                    self.text = ''
-                    run_game()
+                    if self.text:
+                        print(self.text)  # Acción al presionar Enter
+                        # player_name = self.text
+                        show_menu(self.text)
+                        self.text = ''
                 elif event.key == pygame.K_BACKSPACE:
                     self.text = self.text[:-1]
                 else:
@@ -78,6 +96,27 @@ class Textbox():
         # pygame.draw.rect(screen, self.color, self.rect, 2)
         # Dibujar el texto
         screen.blit(self.txt_surface, (self.rect.x + 5, self.rect.y + 5))
+
+class Button():
+    def __init__(self, x, y, width, height, text, color=WHITE, text_color=BLACK, font=font_consolas_20):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.rect.center = (x,y)
+        self.color = color
+        self.text = text
+        self.font = font
+        self.text_color = text_color
+        self.pos_x = x
+        self.pos_y =y
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.color, self.rect)
+        textobj = self.font.render(self.text, True, self.text_color)
+        textrect = textobj.get_rect()
+        textrect.center = self.rect.center
+        surface.blit(textobj, textrect)
+
+    def is_clicked(self, mouse_pos):
+        return self.rect.collidepoint(mouse_pos)
 
 class Stars():
     def __init__(self):
@@ -215,7 +254,7 @@ def collide(obj1, obj2):
     offset_y = obj2.y - obj1.y
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) != None
 
-# Juego
+# Funcion con el codigo del juego
 def run_game():
     # Variables del juego
     stars = Stars()
@@ -252,17 +291,13 @@ def run_game():
                     player.lives -= 1
 
         # Escribimos los labels de nivel, vidas, etc.
-        label_level = font_karmatic_20.render(f"Level: {level}", True, (255,255,255))
-        label_lives = font_karmatic_20.render(f"Lives: {player.lives}", True, (255,255,255))
-        label_destroyed = font_karmatic_20.render(f"Destroyed: {player.destroyed_enemies}", True, (255,255,255))
-        screen.blit(label_level, (10,10))
-        screen.blit(label_lives, (10,30))
-        screen.blit(label_destroyed, (10,50))
+        draw_text(screen, f"Level: {level}", font_karma_20, WHITE, 10,10, False)
+        draw_text(screen, f"Lives: {player.lives}", font_karma_20, WHITE, 10,30, False)
+        draw_text(screen, f"Destroyed: {player.destroyed_enemies}", font_karma_20, WHITE, 10,50, False)
 
         # Si el jugador pierde mostramos el mensaje de derrota
         if lost:
-            label_lost = font_karma_60.render("You Lost!", True, (255,255,255))
-            screen.blit(label_lost, ((WIDTH//2)-(label_lost.get_width()//2), (HEIGHT//2)-(label_lost.get_height()//2)))
+            draw_text(screen, "You Lost!", font_karma_60, WHITE, WIDTH//2, HEIGHT//2)
 
         # Actualizamos la pantalla
         pygame.display.update()
@@ -311,32 +346,79 @@ def run_game():
         if keys[pygame.K_s] and player.y <= HEIGHT-player.size:
             player.y += player.speed
 
+def show_controls():
+    button_back = Button(WIDTH*0.5, HEIGHT*0.8, 110, 28, "<<Back")
+    while True:
+        clock.tick(FPS)
+        pygame.display.update()
 
-# Creamos los labels
-label_title_game = font_karma_60.render("Space Invaders", True, (255,255,255))
-label_player_name = font_consolas_15.render("Player Name:", True, (255,255,255))
-label_made_by = font_consolas_15.render("Made by @PakoMtz", True, (200,200,200))
-# label_title = font_consolas_30.render("Press any key to begin", True, (255,255,255))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if button_back.is_clicked(mouse_pos):
+                    return
 
-# Crear una instancia de Textbox
-textbox = Textbox(pos_x=WIDTH//2 - 70, pos_y=HEIGHT//2, width=140, height=30, font=font_consolas_20)
+        screen.fill(BACKGROUND)
+        draw_text(screen, "Move:", font_consolas_30, WHITE, WIDTH*0.3, HEIGHT*0.1 + keyboard_img.get_height()//2)
+        draw_text(screen, "Shoot:", font_consolas_30, WHITE, WIDTH*0.3, HEIGHT*0.4 + space_key_img.get_height()//2)
+        screen.blit(keyboard_img, (WIDTH*0.5, HEIGHT*0.1))
+        screen.blit(space_key_img, (WIDTH*0.5, HEIGHT*0.4))
+        button_back.draw(screen)
 
-# Menu principal
-run = True
-while run:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-        # if event.type == pygame.KEYDOWN:
-        #     run_game()
-        textbox.handle_event(event)
+def show_menu(player_name):
+    button_play =       Button(WIDTH*0.5, HEIGHT*0.5, 110, 28, "Play!")
+    button_controls =   Button(WIDTH*0.5, HEIGHT*0.6, 110, 28, "Controls")
+    button_records =    Button(WIDTH*0.5, HEIGHT*0.7, 110, 28, "Records")
+    button_back =       Button(WIDTH*0.5, HEIGHT*0.8, 110, 28, "<<Back")
 
-    screen.fill(BACKGROUND)
-    screen.blit(label_title_game, (WIDTH//2 - label_title_game.get_width()//2, HEIGHT*0.2))
-    screen.blit(label_player_name, (WIDTH//2 - label_player_name.get_width()//2, HEIGHT//2 - 18))
-    screen.blit(label_made_by, (WIDTH//2 - label_made_by.get_width()//2, HEIGHT-18))
-    # screen.blit(label_title, (WIDTH//2 - label_title.get_width()//2, HEIGHT//2))
-    textbox.draw(screen)
-    pygame.display.update()
+    while True:
+        clock.tick(FPS)
+        pygame.display.update()
 
-pygame.quit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if button_play.is_clicked(mouse_pos):
+                    run_game()
+                if button_controls.is_clicked(mouse_pos):
+                    show_controls()
+                if button_back.is_clicked(mouse_pos):
+                    return
+        
+        screen.fill(BACKGROUND)
+        draw_text(screen, "Space Invaders", font_karma_60, WHITE, WIDTH//2, HEIGHT*0.3)
+        draw_text(screen, f"Welcome {player_name}", font_consolas_20, WHITE, WIDTH//2, HEIGHT*0.4)
+        draw_text(screen, "Made by @PakoMtz", font_consolas_15, (200,200,200), WIDTH//2, HEIGHT-18)
+        button_play.draw(screen)
+        button_controls.draw(screen)
+        button_records.draw(screen)
+        button_back.draw(screen)
+
+def main():
+    # Crear una instancia de Textbox
+    textbox = Textbox(pos_x=WIDTH//2 - 70, pos_y=HEIGHT//2, width=140, height=30, font=font_consolas_20)
+
+    # Menu principal
+    while True:
+        clock.tick(FPS)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+            textbox.handle_event(event)
+
+        screen.fill(BACKGROUND)
+        draw_text(screen, "Space Invaders", font_karma_60, WHITE, WIDTH//2, HEIGHT*0.3)
+        draw_text(screen, "Player Name:", font_consolas_15, WHITE, WIDTH//2, HEIGHT//2 - 15)
+        draw_text(screen, "type your name and press <Enter>", font_consolas_15, WHITE, WIDTH//2, HEIGHT*0.6)
+        draw_text(screen, "Made by @PakoMtz", font_consolas_15, (200,200,200), WIDTH//2, HEIGHT-18)
+        textbox.draw(screen)
+
+if __name__ == "__main__":
+    main()
